@@ -1,0 +1,11 @@
+ai2thor == 4.3.0
+
+Symbolic planner:
+    definition of sandwich making
+    actual planner
+
+Navigation:
+    better cost function
+    LRTA* with K>1
+
+Put them together

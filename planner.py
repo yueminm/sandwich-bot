@@ -34,7 +34,12 @@ class NavigationPlanner:
             else:
                 return None
 
+    def plan2(self, event: Event, k: int):
+        """LRTA* with K=k"""
+        raise NotImplementedError
+
     def plan(self, event: Event):
+        """LRTA* with K=1"""
 
         snap_action = NavigationState.snap_action(event)
         self.env.step(snap_action)
@@ -65,10 +70,10 @@ class NavigationPlanner:
                 current = NavigationState.from_event(self.env.event)
 
 
-class VisualSearchPlanner:
-    def __init__(self, env: Env, object_id: str):
-        self.env = env
-        self.object_id = object_id
+# class VisualSearchPlanner:
+#     def __init__(self, env: Env, object_id: str):
+#         self.env = env
+#         self.object_id = object_id
 
 
 def handle_look_at(env: Env, object_id: str):

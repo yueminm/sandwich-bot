@@ -37,10 +37,12 @@ class Env:
 
     @property
     def objects(self) -> List[str]:
+        """Return all object ids in the environment"""
         return [obj_info["objectId"] for obj_info in self.event.metadata["objects"]]
 
     @property
     def objects_visible(self) -> List[str]:
+        """Return all visible object ids in the environment"""
         return [
             obj_info["objectId"]
             for obj_info in self.event.metadata["objects"]
@@ -53,6 +55,7 @@ class Env:
         return self.event
 
     def step(self, action: Action) -> bool:
+        """Attempts to perform action, return if the action is successful"""
 
         for api_action in action.api_actions:
             sleep(self.interval)
