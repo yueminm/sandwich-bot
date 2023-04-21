@@ -142,30 +142,6 @@ class NavigationState:
                 )
 
 
-# class VisualSearchState:
-#     def __init__(self, theta: float, horizon: float):
-#         self.theta = theta
-#         self.horizon = horizon
-#
-#     def __hash__(self) -> int:
-#         return hash(self.theta + self.horizon)
-#
-#     def __eq__(self, other) -> bool:
-#         return (
-#             isinstance(other, VisualSearchState)
-#             and other.theta == self.theta
-#             and other.horizon == self.horizon
-#         )
-#
-#     @staticmethod
-#     def from_event(self, event: Event) -> "VisualSearchState":
-#         return VisualSearchState(
-#             event.metadata["agent"]["rotation"]["y"],
-#             event.metadata["agent"]["cameraHorizon"],
-#         )
-#
-
-
 def get_obj_loc(event: Event, object_id: str) -> Optional[Pos2D]:
 
     pos = None
@@ -175,6 +151,8 @@ def get_obj_loc(event: Event, object_id: str) -> Optional[Pos2D]:
             pos = Pos2D(center["x"], center["z"])
     if pos is None:
         logging.warning("{} not found in scene".format(object_id))
+        objects = [info["objectId"] for info in event.metadata["objects"]]
+        logging.debug("available objects: {}".format(pformat(objects)))
     return pos
 
 

@@ -4,14 +4,14 @@ from typing import List, Tuple
 from fire import Fire
 
 from interface import Env
-from planner import NavigationPlanner, handle_look_at, handle_put_obj
+from planner import NavigationPlanner
 
 
 def set_logging(level: str = "INFO"):
     logging.basicConfig(
         force=True,
         level=level,
-        format="[%(levelname)s] (%(module)s@%(process)d) %(message)s",
+        format="[%(levelname)s] (%(module)s:%(lineno)d @%(process)d) %(message)s",
     )
 
 
@@ -32,7 +32,7 @@ class Agent:
 
     def look_at_obj(self, object_id: str):
         """Assumes the agent is reasonable close to object"""
-        handle_look_at(self.env, object_id)
+        self.env.look_at(object_id)
 
     def pick_obj(self, object_id: str):
         """Assumes the agent has the object in the frame"""
@@ -48,7 +48,7 @@ class Agent:
         the frame
         Manually handle sliced object
         """
-        handle_put_obj(self.env, recep_id)
+        self.env.put_obj(recep_id)
 
     def cut_obj(self, object_id: str):
         """
@@ -81,10 +81,16 @@ def test():
         ("go_to_obj", "Plate|-01.47|+01.31|+00.24"),
         ("look_at_obj", "Plate|-01.47|+01.31|+00.24"),
         ("put_obj", "Plate|-01.47|+01.31|+00.24"),
+        ("go_to_obj", "BreadSliced|-01.51|+01.37|+00.53"),
+        ("look_at_obj", "BreadSliced|-01.51|+01.37|+00.53"),
+        ("pick_obj", "BreadSliced|-01.51|+01.37|+00.53"),
+        ("go_to_obj", "BreadSliced|-01.40|+01.35|+00.27"),
+        ("look_at_obj", "BreadSliced|-01.40|+01.35|+00.27"),
+        ("put_obj", "BreadSliced|-01.40|+01.35|+00.27"),
     ]
 
     A.execute(tasks)
-    event = env.api_step(action="Done")
+    event = env.api_step(action="Done")  # noqa
     import pdb
 
     pdb.set_trace()
