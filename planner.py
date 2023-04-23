@@ -4,9 +4,13 @@ from typing import Optional
 import numpy as np
 from ai2thor.server import Event
 
-import utils
+# import utils
+# from interface import Env
+# from utils import NavigationState, Pos2D
+
+import utils_initial as utils
 from interface import Env
-from utils import NavigationState, Pos2D
+from utils_initial import NavigationState, Pos2D
 
 
 class NavigationPlanner:
@@ -15,7 +19,8 @@ class NavigationPlanner:
         self.goal = NavigationState(*goal)
         self.heuristics = {}
 
-        self.plan(env.event)
+        self.plan2(env.event, 1)
+        # self.plan(env.event)
 
     @staticmethod
     def go_to_obj(env: Env, object_id: str):
@@ -36,7 +41,85 @@ class NavigationPlanner:
 
     def plan2(self, event: Event, k: int):
         """LRTA* with K=k"""
-        raise NotImplementedError
+        snap_action = NavigationState.snap_action(event)
+        self.env.step(snap_action)
+        this_state = NavigationState.from_event(self.env.event)
+        
+        while True:
+            current = this_state
+            """Dictionary to store information of states"""
+            expanded_state_dict = {current : dict(parent_state = None, parent_action = None, all_expanded = False, goal_reached = False)}
+            """List to track the order of states being expanded"""
+            expanded_state_order = []
+            expanded_state_order.append(current)
+            expanding_id = 0
+            count = 0
+            
+            if this_state - self.goal <= 1.0:
+                return
+
+            """Expand k states and store corresponding information into dictionary"""
+            while count < k:
+                current = expanded_state_order[expanding_id]
+                print("in loop")
+                print(expanded_state_dict[current])
+                if expanded_state_dict[current]["goal_reached"]:
+                    break
+                print("here")
+                for succ, action in current.get_successors():
+                    if count >= k:
+                        break
+                    if succ is None:
+                        break
+                    if succ in expanded_state_dict:
+                        continue
+                    if not self.env.step(action): 
+                        NavigationState.add_invalid(succ)
+                        continue
+                    
+                    expanded_state_info = dict(parent_state = current, parent_action = action, all_expanded = False, goal_reached = False)
+                    expanded_state_dict[succ] = expanded_state_info
+                    expanded_state_order.append(succ)
+                    count += 1
+                    if succ - self.goal <= 1.0:
+                        expanded_state_dict[succ]["goal_reached"] = True
+                        
+                expanding_id += 1
+                expanded_state_dict[current]["all_expanded"] = True
+            
+            min_f = np.inf
+            min_f_state = None
+            for state in expanded_state_order[::-1]:
+                if expanded_state_dict[state]["all_expanded"]:
+                    break
+                if expanded_state_dict[state]["goal_reached"]:
+                    min_f_state = state
+                    self.heuristics[state] = 0.0
+                    break
+                
+                for succ, action in state.get_successors():
+                    if succ in expanded_state_dict:
+                        continue
+                    heuristic = self.get_heuristics(succ)
+                    f_value = heuristic + action.cost
+                    if f_value <= min_f:
+                        min_f = f_value
+                        min_f_state = state
+            
+            self.heuristics[min_f_state] = min_f
+            next_state = min_f_state
+            while (not expanded_state_dict[next_state]["parent_state"] is None):
+                backtrack_state = expanded_state_dict[next_state]["parent_state"]
+                self.heuristics[backtrack_state] =  self.heuristics[next_state] \
+                    + expanded_state_dict[next_state]["parent_action"].cost
+                next_state = backtrack_state
+            
+            this_state = next_state
+                    
+        
+                
+            
+            
 
     def plan(self, event: Event):
         """LRTA* with K=1"""

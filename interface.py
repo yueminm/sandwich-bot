@@ -6,7 +6,8 @@ from typing import List
 from ai2thor import controller
 from ai2thor.server import Event
 
-from utils import Action
+# from utils import Action
+from utils_initial import Action
 
 
 class Env:

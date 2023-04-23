@@ -7,8 +7,7 @@ from typing import Iterator, List, Optional, Tuple
 import numpy as np
 from ai2thor.server import Event
 
-orientation_bindings = {0: (0, 1), 90: (1, 0), 180: (0, -1), 270: (-1, 0), \
-                        45: (1, 1), 135: (1, -1), 225: (-1, -1), 315: (-1, 1)}
+orientation_bindings = {0: (0, 1), 90: (1, 0), 180: (0, -1), 270: (-1, 0)}
 
 Pos2D = namedtuple("Pos2D", ["x", "z"])
 
@@ -25,7 +24,7 @@ def get_rotation(degrees: float) -> dict:
             return dict(action="RotateLeft", degrees=-degrees)
         else:
             return dict(action="RotateRight", degrees=360 + degrees)
-        
+
 
 class Action:
     rotate_angle: int = 15
@@ -41,7 +40,8 @@ class Action:
                 degrees = api_action.get("degrees", 90)
                 while degrees > self.rotate_angle:
                     self.api_actions.append(
-                        dict(action=api_action["action"], degrees=self.rotate_angle)
+                        dict(action=api_action["action"],
+                             degrees=self.rotate_angle)
                     )
                     degrees -= self.rotate_angle
                 self.api_actions.append(
@@ -115,7 +115,8 @@ class NavigationState:
             actions.append(get_rotation(diff))
         if not math.isclose(event.metadata["agent"]["cameraHorizon"], 0):
             actions.append(
-                dict(action="LookUp", degrees=event.metadata["agent"]["cameraHorizon"])
+                dict(action="LookUp",
+                     degrees=event.metadata["agent"]["cameraHorizon"])
             )
         return Action(actions)
 
@@ -136,13 +137,8 @@ class NavigationState:
                 actions = []
                 if target_theta != self.theta:
                     actions.append(get_rotation(target_theta - self.theta))
-                # actions.append(
-                #     dict(action="MoveAhead", moveMagnitude=self.step_size))
-                # yield (
-                #     NavigationState(new_x, new_z, target_theta),
-                #     Action(actions),
-                # )
-                actions.append(dict(action="Teleport", position=dict(x=new_x, y=1, z=new_z)))
+                actions.append(
+                    dict(action="MoveAhead", moveMagnitude=self.step_size))
                 yield (
                     NavigationState(new_x, new_z, target_theta),
                     Action(actions),
