@@ -25,6 +25,7 @@ class Agent:
     def execute(self, tasks: List[Tuple[str, str]]):
         for func, arg in tasks:
             getattr(self, func)(arg)
+            print(getattr(self, func)(arg))
 
     def go_to_obj(self, object_id: str):
         """Assumes the object is reachable"""

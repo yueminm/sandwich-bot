@@ -6,14 +6,15 @@ from typing import List
 from ai2thor import controller
 from ai2thor.server import Event
 
-# from utils import Action
-from utils_initial import Action
+from utils import Action
+# from utils_initial import Action
 
 
 class Env:
     controller: controller.Controller
     event: Event
     interval: float = 0.15
+    reachables: list
 
     def __init__(
         self,
@@ -32,9 +33,12 @@ class Env:
             fieldOfView=60,
             renderInstanceSegmentation=True,
         )
+        self.reachables = self.controller.step(action="GetReachablePositions").metadata["actionReturn"]
+        
         self.event = self.controller.step(action="Done")
         logging.info("environment started")
         logging.debug("all objects: \n {}".format(pformat(self.objects, indent=2)))
+
 
     @property
     def objects(self) -> List[str]:
@@ -57,7 +61,9 @@ class Env:
 
     def step(self, action: Action) -> bool:
         """Attempts to perform action, return if the action is successful"""
-
+        l = self.controller.step(
+            action="GetReachablePositions").metadata["actionReturn"]
+        # print(l)
         for api_action in action.api_actions:
             sleep(self.interval)
             logging.debug("executing {}".format(api_action))
