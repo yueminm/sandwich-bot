@@ -1,0 +1,54 @@
+Environment: Sandwich.txt
+
+***** Environment *****
+
+Symbols: TS2,L,T,BS1,BS2,TS3,BS3,LS1,LS2,LS3,TS1,B,R,plate,
+Initial conditions: Robot(R) Whole(L) Whole(B) Clear(plate) Empty(R) Whole(T)
+Goal conditions: On(BS2,TS1) On(TS1,LS1) On(LS1,BS1) On(BS1,plate)
+Actions:
+PickSlice(x)
+Precondition: Empty(R) Available(x)
+Effect: !Available(x) InHand(x) !Empty(R)
+
+PutKnife(x)
+Precondition: HasKnife(x) Robot(x)
+Effect: Empty(x) !HasKnife(x)
+
+PickKnife(x)
+Precondition: Empty(x) Robot(x)
+Effect: HasKnife(x) !Empty(x)
+
+CutBread(x)
+Precondition: Whole(B) HasKnife(x) Robot(x)
+Effect: Available(BS3) Available(BS2) Available(BS1) !Whole(B)
+
+CutTomato(x)
+Precondition: Whole(T) HasKnife(x) Robot(x)
+Effect: Available(TS3) Available(TS2) Available(TS1) !Whole(T)
+
+PutSlice(x,y)
+Precondition: Clear(y) InHand(x)
+Effect: !Clear(y) On(x,y) !InHand(x) Clear(x) Empty(R)
+
+CutLettuce(x)
+Precondition: Whole(L) HasKnife(x) Robot(x)
+Effect: Available(LS1) Available(LS3) Available(LS2) !Whole(L)
+
+***** Environment Created! *****
+Found goal after 623 nodes
+1154 heuristics computed
+
+Plan:
+PickKnife(R)
+CutBread(R)
+CutTomato(R)
+CutLettuce(R)
+PutKnife(R)
+PickSlice(BS1)
+PutSlice(BS1,plate)
+PickSlice(LS1)
+PutSlice(LS1,BS1)
+PickSlice(TS1)
+PutSlice(TS1,LS1)
+PickSlice(BS2)
+PutSlice(BS2,TS1)

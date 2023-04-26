@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 from pprint import pformat
 from time import sleep
 from typing import List
@@ -25,6 +27,10 @@ class Env:
         floorplan: str = "FloorPlan3",
     ):
 
+        self.floorplan = floorplan
+        self.width = width
+        self.height = height
+
         self.controller = controller.Controller(
             scene=floorplan,
             width=width,
@@ -34,12 +40,43 @@ class Env:
             fieldOfView=60,
             renderInstanceSegmentation=True,
         )
+
+        if os.path.isfile("poses/{}.json".format(floorplan)):
+            self.event = self.controller.step(
+                action="SetObjectPoses",
+                objectPoses=json.load(open("poses/{}.json".format(floorplan))),
+            )
+
         self.reachables = self.controller.step(action="GetReachablePositions").metadata[
             "actionReturn"
         ]
 
         self.event = self.controller.step(action="Done")
+        self.path_length = 0
         logging.info("environment started")
+        logging.debug("all objects: \n {}".format(pformat(self.objects, indent=2)))
+
+    def reset(self):
+        self.controller.reset(
+            scene=self.floorplan,
+            width=self.width,
+            height=self.height,
+            gridSize=0.05,
+            snapToGrid=False,
+            fieldOfView=60,
+            renderInstanceSegmentation=True,
+        )
+        if os.path.isfile("poses/{}.json".format(self.floorplan)):
+            self.event = self.controller.step(
+                action="SetObjectPoses",
+                objectPoses=json.load(open("poses/{}.json".format(self.floorplan))),
+            )
+        self.reachables = self.controller.step(action="GetReachablePositions").metadata[
+            "actionReturn"
+        ]
+
+        self.event = self.controller.step(action="Done")
+        logging.info("environment reset")
         logging.debug("all objects: \n {}".format(pformat(self.objects, indent=2)))
 
     @property
@@ -57,21 +94,31 @@ class Env:
         ]
 
     def api_step(self, *args, **kwargs) -> Event:
-        self.event = self.controller.step(*args, **kwargs)
         sleep(self.interval)
+        self.event = self.controller.step(*args, **kwargs)
+        if (
+            len(args) > 0
+            and isinstance(args[0], dict)
+            and args[0].get("action", "").startswith("Move")
+        ):
+            self.path_length += args[0]["moveMagnitude"]
+        if kwargs.get("action", "").startswith("Move"):
+            self.path_length += kwargs["moveMagnitude"]
         return self.event
 
     def step(self, action: Action) -> bool:
         """Attempts to perform action, return if the action is successful"""
         for api_action in action.api_actions:
-            sleep(self.interval)
             logging.debug("executing {}".format(api_action))
-            self.event = self.controller.step(api_action)
+            self.event = self.api_step(api_action)
             if not self.event.metadata["lastActionSuccess"]:
                 logging.info(
                     "last action unsuccessful: \n {}".format(
                         pformat(api_action, indent=2)
                     )
+                )
+                logging.warning(
+                    "{}".format(pformat(self.event.metadata["errorMessage"], indent=2))
                 )
                 return False
         return True

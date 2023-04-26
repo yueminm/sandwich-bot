@@ -1,14 +1,13 @@
 import logging
-from typing import Optional
+import math
+from typing import Iterator, List, Optional, Tuple
 
 import numpy as np
-import math
 from ai2thor.server import Event
-from typing import Iterator, List, Optional, Tuple
 
 import utils
 from interface import Env
-from utils import NavigationState, Pos2D, Action
+from utils import Action, NavigationState, Pos2D
 
 # import utils_initial as utils
 # from interface import Env
@@ -104,7 +103,7 @@ class NavigationPlanner:
                 print("Successor None")
                 return
 
-            if current - self.goal < 1:
+            if current - self.goal < 0.9:
                 # goal check
                 print("Goal Reached")
                 return
@@ -222,10 +221,12 @@ class NavigationPlanner:
 def handle_look_at(env: Env, object_id: str):
 
     # rotate
-    print("TRY LOOK AT")
+    print("TRY LOOK AT", object_id)
     current = NavigationState.from_event(env.event)
-    object_pos = utils.get_obj_loc(env.event, object_id)
+    object_pos = utils.get_obj_loc3d(env.event, object_id)
+    print(object_pos)
     dx = object_pos.x - current.x
+    dy = object_pos.y - env.event.metadata["agent"]["position"]["y"] - 0.675
     dz = object_pos.z - current.z
     target_theta = np.arctan2(dx, dz) / np.pi * 180
     if target_theta < 0:
@@ -237,19 +238,12 @@ def handle_look_at(env: Env, object_id: str):
     env.step(utils.Action([action_dict]))
 
     # update horizon
-    while env.event.metadata["agent"]["cameraHorizon"] < 60 and (
-        object_id not in env.objects_visible
-        or utils.get_obj_in_frame(env.event, object_id)[0] > 0.7
-    ):
-        env.api_step(action="LookDown", degrees=10)
-    if object_id not in env.objects_visible:
-        while env.event.metadata["agent"]["cameraHorizon"] > -30 and (
-            object_id not in env.objects_visible
-            or utils.get_obj_in_frame(env.event, object_id)[0] > 0.3
-        ):
-            env.api_step(action="LookUp", degrees=10)
-    if object_id not in env.objects_visible:
-        logging.warning("object {} not found".format(object_id))
+    target_horizon = np.arctan(-dy / np.sqrt(dx ** 2 + dz ** 2)) / np.pi * 180
+    change = target_horizon - env.event.metadata["agent"]["cameraHorizon"]
+    if target_horizon < 0:
+        env.step(utils.Action([dict(action="LookUp", degrees=-change)]))
+    else:
+        env.step(utils.Action([dict(action="LookDown", degrees=change)]))
 
 
 def set_object_pose(env: Env, positions: dict, rotations: dict):
@@ -294,6 +288,7 @@ def handle_put_obj(env: Env, recep_id: str):
                     {object_in_hand: rotation},
                 )
         elif "Slice" in object_in_hand:
+            current_object = event.get_object(object_in_hand)
             target_object = event.get_object(recep_id)
             target_bbox = target_object["axisAlignedBoundingBox"]
             rotation = current_object["rotation"]

@@ -19,6 +19,7 @@ orientation_bindings = {
 }
 
 Pos2D = namedtuple("Pos2D", ["x", "z"])
+Pos3D = namedtuple("Pos3D", ["x", "y", "z"])
 
 
 def get_rotation(degrees: float) -> dict:
@@ -49,11 +50,14 @@ class Action:
                 degrees = api_action.get("degrees", 90)
                 while degrees > self.rotate_angle:
                     self.api_actions.append(
-                        dict(action=api_action["action"], degrees=self.rotate_angle)
+                        dict(
+                            action=api_action["action"],
+                            degrees=round(self.rotate_angle, 1),
+                        )
                     )
                     degrees -= self.rotate_angle
                 self.api_actions.append(
-                    dict(action=api_action["action"], degrees=degrees)
+                    dict(action=api_action["action"], degrees=round(degrees, 1))
                 )
             else:
                 self.api_actions.append(api_action)
@@ -217,6 +221,20 @@ def get_obj_loc(event: Event, object_id: str) -> Optional[Pos2D]:
         if object_info["objectId"] == object_id:
             center = object_info["axisAlignedBoundingBox"]["center"]
             pos = Pos2D(center["x"], center["z"])
+    if pos is None:
+        logging.warning("{} not found in scene".format(object_id))
+    return pos
+
+
+def get_obj_loc3d(event: Event, object_id: str) -> Optional[Pos3D]:
+
+    pos = None
+    for object_info in event.metadata["objects"]:
+        if object_info["objectId"] == object_id:
+            # center = object_info["axisAlignedBoundingBox"]["center"]
+            center = object_info["position"]
+            pos = Pos3D(center["x"], center["y"], center["z"])
+            break
     if pos is None:
         logging.warning("{} not found in scene".format(object_id))
     return pos

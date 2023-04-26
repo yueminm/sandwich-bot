@@ -1,4 +1,5 @@
 import logging
+from pprint import pformat
 from typing import List, Tuple
 
 from fire import Fire
@@ -21,6 +22,27 @@ set_logging("INFO")
 class Agent:
     def __init__(self, env: Env):
         self.env = env
+
+        self.bindings = {
+            "Bread": None,
+            "Lettuce": None,
+            "Tomato": None,
+            "Knife": None,
+            "Plate": None,
+            "Sink": None,
+            "Pot": None,
+            "SinkBasin": None,
+        }
+        for obj_info in self.env.event.metadata["objects"]:
+            if obj_info["objectType"] in self.bindings.keys():
+                self.bindings[obj_info["objectType"]] = obj_info["name"]
+                if obj_info["objectType"] in {"Bread", "Lettuce", "Tomato"}:
+                    for i in range(1, 4):
+                        self.bindings[
+                            obj_info["objectType"][0] + "S" + str(i)
+                        ] = obj_info["assetId"] + "_Slice_{}".format(i + 1)
+        self.bindings["plate"] = self.bindings["Plate"]
+        logging.debug("got bindings: \n{}".format(pformat(self.bindings, indent=2)))
 
     def execute(self, tasks: List[Tuple[str, str]]):
         for func, arg in tasks:
@@ -60,6 +82,71 @@ class Agent:
         else:
             logging.warning("{} not found in scene".format(object_id))
 
+    def name_to_id(self, name: str) -> str:
+
+        for obj_info in self.env.event.metadata["objects"]:
+            if obj_info["name"] == name:
+                return obj_info["objectId"]
+
+    def parse(self, string: str) -> Tuple[str]:
+
+        string = string[string.index("(") + 1 : string.index(")")]
+        return tuple(string.split(","))
+
+    def run_plan(self, plan_file: str):
+
+        plan = open(plan_file).readlines()
+        plan = plan[plan.index("Plan:\n") + 1 :]
+        logging.info("got plan: \n{}".format(pformat(plan, indent=2)))
+
+        for step in plan:
+            logging.debug("executing {}".format(step))
+            if step.startswith("PickKnife"):
+                self.go_to_obj(self.name_to_id(self.bindings["Knife"]))
+                self.look_at_obj(self.name_to_id(self.bindings["Knife"]))
+                self.pick_obj(self.name_to_id(self.bindings["Knife"]))
+            elif step.startswith("CutBread"):
+                self.go_to_obj(self.name_to_id(self.bindings["Bread"]))
+                self.look_at_obj(self.name_to_id(self.bindings["Bread"]))
+                self.cut_obj(self.name_to_id(self.bindings["Bread"]))
+            elif step.startswith("CutTomato"):
+                self.go_to_obj(self.name_to_id(self.bindings["Tomato"]))
+                self.look_at_obj(self.name_to_id(self.bindings["Tomato"]))
+                self.cut_obj(self.name_to_id(self.bindings["Tomato"]))
+            elif step.startswith("CutLettuce"):
+                self.go_to_obj(self.name_to_id(self.bindings["Lettuce"]))
+                self.look_at_obj(self.name_to_id(self.bindings["Lettuce"]))
+                self.cut_obj(self.name_to_id(self.bindings["Lettuce"]))
+            elif step.startswith("PutKnife"):
+                self.go_to_obj(self.name_to_id(self.bindings["SinkBasin"]))
+                self.look_at_obj(self.name_to_id(self.bindings["SinkBasin"]))
+                self.put_obj(self.name_to_id(self.bindings["SinkBasin"]))
+            elif step.startswith("PickSlice"):
+                symbol = self.parse(step)[0]
+                # if symbol not in self.bindings.keys():
+                #     object_type = {
+                #         "BS": "BreadSliced",
+                #         "LS": "LettuceSliced",
+                #         "TS": "TomatoSliced",
+                #     }[symbol[:2]]
+                #     for obj_info in self.env.event.metadata["objects"]:
+                #         if (
+                #             obj_info["objectType"] == object_type
+                #             and obj_info["name"] not in self.bindings.values()
+                #         ):
+                #             self.bindings[symbol] = obj_info["name"]
+                #             break
+                self.go_to_obj(self.name_to_id(self.bindings[symbol]))
+                self.look_at_obj(self.name_to_id(self.bindings[symbol]))
+                self.pick_obj(self.name_to_id(self.bindings[symbol]))
+            elif step.startswith("PutSlice"):
+                symbol = self.parse(step)[-1]
+                self.go_to_obj(self.name_to_id(self.bindings[symbol]))
+                self.look_at_obj(self.name_to_id(self.bindings[symbol]))
+                self.put_obj(self.name_to_id(self.bindings[symbol]))
+
+        logging.info("total path length: {}".format(self.env.path_length))
+
 
 def test():
     set_logging("DEBUG")
@@ -84,10 +171,14 @@ def test():
     ]
 
     A.execute(tasks)
-    event = env.api_step(action="Done")
-    import pdb
+    event = env.api_step(action="Done")  # noqa
 
-    # pdb.set_trace()
+
+def run_plan(plan_file: str, floorplan: str = "FloorPlan3"):
+
+    set_logging("DEBUG")
+    env = Env(floorplan=floorplan)
+    Agent(env).run_plan(plan_file)
 
 
 if __name__ == "__main__":
