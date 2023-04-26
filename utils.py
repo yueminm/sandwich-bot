@@ -99,11 +99,11 @@ class NavigationState:
         """manhattan distance"""
 
         if isinstance(other, dict):
-            return abs(other['x'] - self.x) + abs(other['z'] - self.z)
-            # return (math.sqrt((other['x']-self.x)**2 + (other['z']-self.z)**2))
+            # return abs(other['x'] - self.x) + abs(other['z'] - self.z)
+            return (math.sqrt((other['x']-self.x)**2 + (other['z']-self.z)**2))
         if isinstance(other, NavigationState):
-            return abs(other.x - self.x) + abs(other.z - self.z)
-            # return (math.sqrt((other.x-self.x)**2 + (other.z-self.z)**2))
+            # return abs(other.x - self.x) + abs(other.z - self.z)
+            return (math.sqrt((other.x-self.x)**2 + (other.z-self.z)**2))
         else:
             raise ValueError(
                 "can't subtract {} from NavigationState".format(type(other))

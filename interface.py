@@ -61,9 +61,6 @@ class Env:
 
     def step(self, action: Action) -> bool:
         """Attempts to perform action, return if the action is successful"""
-        l = self.controller.step(
-            action="GetReachablePositions").metadata["actionReturn"]
-        # print(l)
         for api_action in action.api_actions:
             sleep(self.interval)
             logging.debug("executing {}".format(api_action))

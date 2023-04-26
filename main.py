@@ -25,7 +25,6 @@ class Agent:
     def execute(self, tasks: List[Tuple[str, str]]):
         for func, arg in tasks:
             getattr(self, func)(arg)
-            print(getattr(self, func)(arg))
 
     def go_to_obj(self, object_id: str):
         """Assumes the object is reachable"""
@@ -88,7 +87,7 @@ def test():
     event = env.api_step(action="Done")
     import pdb
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
 
 if __name__ == "__main__":

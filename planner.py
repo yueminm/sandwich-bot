@@ -58,6 +58,7 @@ class NavigationPlanner:
         i = 0
         while i < k and len(position_dist) > 0:
             res.append(position_dist.pop(0))
+            i += 1
         
         for (pos, d) in res:
             dx = pos['x'] - state.x
@@ -78,14 +79,15 @@ class NavigationPlanner:
         # snap_action = NavigationState.snap_action(event)
         # self.env.step(snap_action)
         current = NavigationState.from_event(self.env.event)
-        print('current_state', current)
+        print('CURRENT: ', current)
+        print('GOAL: ', self.goal)
 
         while True:
 
             successor = None
             successor_action = None
             successor_f = None
-            for succ, action in self.get_k_successors(current, 10):
+            for succ, action in self.get_k_successors(current, 20):
                 heuristic = self.get_heuristics(succ)
                 f_value = heuristic + action.cost
                 if successor_f is None or f_value < successor_f:
@@ -93,16 +95,18 @@ class NavigationPlanner:
                     successor_action = action
                     successor_f = f_value
 
-            if successor is None or current - self.goal < 1:
+            if successor is None:
+                print("Successor None")
+                return
+                 
+            if current - self.goal < 1:
                 # goal check
+                print("Goal Reached")
                 return
 
-            self.env.step(successor_action)
-            self.heuristics[current] = successor_f
-            current = successor
-            # else:
-            #     NavigationState.add_invalid(successor)
-            #     current = NavigationState.from_event(self.env.event)
+            if self.env.step(successor_action):
+                self.heuristics[current] = successor_f
+                current = successor
                 
                 
                 
@@ -113,7 +117,7 @@ class NavigationPlanner:
         current = NavigationState.from_event(self.env.event)
 
         while True:
-            print(current)
+            # print(current)
             """Dictionary to store information of states"""
             expanded_state_dict = {current: dict(
                 parent_state=None, parent_action=None, all_expanded=False, goal_reached=False)}
@@ -204,7 +208,7 @@ class NavigationPlanner:
 def handle_look_at(env: Env, object_id: str):
 
     # rotate
-    print("something")
+    print("TRY LOOK AT")
     current = NavigationState.from_event(env.event)
     object_pos = utils.get_obj_loc(env.event, object_id)
     dx = object_pos.x - current.x
