@@ -76,8 +76,8 @@ class NavigationPlanner:
     def plan(self, event: Event):
         """LRTA* with K=1"""
 
-        # snap_action = NavigationState.snap_action(event)
-        # self.env.step(snap_action)
+        snap_action = NavigationState.snap_action(event)
+        self.env.step(snap_action)
         current = NavigationState.from_event(self.env.event)
         print('CURRENT: ', current)
         print('GOAL: ', self.goal)
