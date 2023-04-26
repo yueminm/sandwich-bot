@@ -91,9 +91,6 @@ def test():
 
     A.execute(tasks)
     event = env.api_step(action="Done")  # noqa
-    import pdb
-
-    pdb.set_trace()
 
 
 if __name__ == "__main__":
