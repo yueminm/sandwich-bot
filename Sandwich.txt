@@ -1,0 +1,32 @@
+Symbols: B,L,T,BS1,BS2,BS3,LS1,LS2,LS3,TS1,TS2,TS3,R,plate
+Initial conditions: Whole(B), Whole(L), Whole(T), Empty(R), Clear(plate), Robot(R)
+Goal conditions: On(BS1, plate), On(LS1, BS1), On(TS1, LS1), On(BS2, TS1)
+
+Actions:
+        CutBread(x)
+        Preconditions: Robot(x), HasKnife(x), Whole(B)
+        Effects: !Whole(B), Available(BS1), Available(BS2), Available(BS3)
+
+        CutLettuce(x)
+        Preconditions: Robot(x), HasKnife(x), Whole(L)
+        Effects: !Whole(L), Available(LS1), Available(LS2), Available(LS3)
+
+        CutTomato(x)
+        Preconditions: Robot(x), HasKnife(x), Whole(T)
+        Effects: !Whole(T), Available(TS1), Available(TS2), Available(TS3)
+
+        PickKnife(x)
+        Preconditions: Robot(x), Empty(x)
+        Effects: !Empty(x), HasKnife(x)
+
+        PutKnife(x)
+        Preconditions: Robot(x), HasKnife(x)
+        Effects: !HasKnife(x), Empty(x)
+
+        PickSlice(x)
+        Preconditions: Available(x), Empty(R)
+        Effects: !Empty(R), InHand(x), !Available(x)
+
+        PutSlice(x,y)
+        Preconditions: InHand(x), Clear(y)
+        Effects: Empty(R), !InHand(x), !Clear(y), On(x, y), Clear(x)
